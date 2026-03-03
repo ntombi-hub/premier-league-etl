@@ -27,7 +27,7 @@ os.makedirs(RAW_DATA_DIR, exist_ok=True)
 
 
 def save_raw(data: dict, filename: str):
-     """Save raw API response to JSON file for traceability."""
+    """Save raw API response to JSON file for traceability."""
     filepath = os.path.join(RAW_DATA_DIR, filename)
     with open(filepath, "w") as f:
         json.dump(data, f, indent=2)
@@ -39,7 +39,7 @@ def get_standings() -> list:
     url = f"{API_BASE_URL}/standings"
     params = {"league": PSL_LEAGUE_ID, "season": CURRENT_SEASON}
 
-    response = requests.get(url, headerss = HEADERS, params=params)
+    response = requests.get(url, headers=HEADERS, params=params)
     response.raise_for_status()
     data = response.json()
 
@@ -49,25 +49,45 @@ def get_standings() -> list:
     return standings 
 
 
-def get_matches(season: int = None) -> list:
-    """Fetch players for a specific team."""
-    logger.info(f"Extracting players for team {team_id}...")
-    url = f"{API_BASE_URL}/players"
-    params = {"team": team_id, "season": CURRENT_SEASON}
-
+def get_teams() -> list:
+    """Fetch all PSL teams."""
+    logger.info("Extracting PSL teams...")
+    url = f"{API_BASE_URL}/teams"
+    params = {"league": PSL_LEAGUE_ID, "season": CURRENT_SEASON}
 
     response = requests.get(url, headers=HEADERS, params=params)
     response.raise_for_status()
     data = response.json()
 
-    return data["response"]
+    save_raw(data, f"teams_{CURRENT_SEASON}.json")
+    teams = data["response"]
+    logger.success(f"Extracted {len(teams)} teams")
+    return teams
+
+
+def get_matches(season: int = None) -> list:
+    """Fetch PSL matches for a given season."""
+    if season is None:
+        season = CURRENT_SEASON
+    logger.info(f"Extracting PSL matches for season {season}...")
+    url = f"{API_BASE_URL}/fixtures"
+    params = {"league": PSL_LEAGUE_ID, "season": season}
+
+    response = requests.get(url, headers=HEADERS, params=params)
+    response.raise_for_status()
+    data = response.json()
+
+    save_raw(data, f"matches_{season}.json")
+    matches = data["response"]
+    logger.success(f"Extracted {len(matches)} matches")
+    return matches
 
 
 if __name__ == "__main__":
     logger.info("Starting extraction")
     teams = get_teams()
     standings = get_standings()
-    matches = get_matches
+    matches = get_matches()
     logger.success("Extraction complete!")
 
 
