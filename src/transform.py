@@ -1,8 +1,5 @@
-
-------------
 # Cleans and reshapes raw API data into structured records
 # ready to be loaded into PostgreSQL.
-
 
 from datetime import datetime
 from loguru import logger
@@ -17,7 +14,6 @@ def transform_teams(raw_teams: list) -> list:
         team = item.get("team", {})
         venue = item.get("venue", {})
 
-        # Basic data quality check
         if not team.get("id") or not team.get("name"):
             logger.warning(f"Skipping team with missing id or name: {team}")
             continue
@@ -84,7 +80,6 @@ def transform_matches(raw_matches: list, season: int) -> list:
         if not match_id:
             continue
 
-        # Parse date and time
         raw_date = fixture.get("date")
         match_date = None
         match_time = None
@@ -117,14 +112,12 @@ def validate_matches(matches: list) -> list:
     valid = []
 
     for m in matches:
-        # Goals should not be negative
         if m["home_goals"] is not None and m["home_goals"] < 0:
             logger.warning(f"Skipping match {m['match_id']}: negative home goals")
             continue
         if m["away_goals"] is not None and m["away_goals"] < 0:
             logger.warning(f"Skipping match {m['match_id']}: negative away goals")
             continue
-        # Must have both teams
         if not m["home_team_id"] or not m["away_team_id"]:
             logger.warning(f"Skipping match {m['match_id']}: missing team IDs")
             continue
@@ -133,6 +126,3 @@ def validate_matches(matches: list) -> list:
 
     logger.success(f"Validation complete: {len(valid)}/{len(matches)} matches passed")
     return valid
-
-
-
